@@ -24,8 +24,18 @@ message GreetManytimesResponse{
     string result = 1;
 }
 
+message LongGreetRequest{
+    Greeting greeting = 1;
+}
+
+message LongGreetResponse{
+    string result = 1;
+}
+
 service GreetService{
     rpc Greet(GreetRequest)returns(GreetResponse){};
     rpc GreetManyTime(GreetManyTimesRequest)returns(stream GreetManytimesResponse){};
+    rpc LongGreet(stream LongGreetRequest)returns(LongGreetResponse){};
+
 }
 

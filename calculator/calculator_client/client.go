@@ -6,6 +6,7 @@ import (
 	sumpb "github.com/IkezawaYuki/protobuf-lesson-go/calculator/calculatorpb"
 	"google.golang.org/grpc"
 	"io"
+	"time"
 )
 
 func main() {
@@ -16,8 +17,29 @@ func main() {
 	defer conn.Close()
 
 	c := sumpb.NewCalculateServiceClient(conn)
-	doUnary(c)
-	doStream(c)
+	//doUnary(c)
+	//doStream(c)
+	doStreamingClient(c)
+}
+
+func doStreamingClient(c sumpb.CalculateServiceClient) {
+	nums := []int32{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	stream, err := c.ComputeAverage(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	for _, r := range nums {
+		fmt.Printf("sending %v\n", r)
+		stream.Send(&sumpb.AverageRequest{
+			Num: r,
+		})
+		time.Sleep(1000 * time.Millisecond)
+	}
+	result, err := stream.CloseAndRecv()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("answer is ", result.GetResult())
 }
 
 func doStream(c sumpb.CalculateServiceClient) {

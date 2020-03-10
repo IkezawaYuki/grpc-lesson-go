@@ -4,6 +4,7 @@ import (
 	"context"
 	sumpb "github.com/IkezawaYuki/protobuf-lesson-go/calculator/calculatorpb"
 	"google.golang.org/grpc"
+	"io"
 	"net"
 	"time"
 )
@@ -35,6 +36,25 @@ func (s *server) PrimeNumberDecomposition(req *sumpb.NumRequest, stream sumpb.Ca
 		}
 	}
 	return nil
+}
+
+func (s *server) ComputeAverage(stream sumpb.CalculateService_ComputeAverageServer) error {
+	var sum float32 = 0
+	var n float32 = 0
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			result := sum / n
+			return stream.SendAndClose(&sumpb.AverageResponse{
+				Result: result,
+			})
+		}
+		if err != nil {
+			panic(err)
+		}
+		sum += float32(req.GetNum())
+		n = n + 1
+	}
 }
 
 func main() {
