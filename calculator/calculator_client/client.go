@@ -19,7 +19,48 @@ func main() {
 	c := sumpb.NewCalculateServiceClient(conn)
 	//doUnary(c)
 	//doStream(c)
-	doStreamingClient(c)
+	//doStreamingClient(c)
+	doBiDiStreamClient(c)
+}
+
+func doBiDiStreamClient(c sumpb.CalculateServiceClient) {
+	nums := []int32{1, 2, 1, 4, 1, 6, 1, 8, 1, 10}
+	waitc := make(chan interface{})
+
+	stream, err := c.FindMaximum(context.Background())
+	if err != nil {
+		panic(err)
+	}
+
+	go func() {
+		for _, n := range nums {
+			time.Sleep(1000 * time.Millisecond)
+			err := stream.Send(&sumpb.FindMaximumRequest{
+				Num: n,
+			})
+			if err != nil {
+				panic(err)
+			}
+		}
+		stream.CloseSend()
+	}()
+
+	go func() {
+		for {
+			resp, err := stream.Recv()
+			if err == io.EOF {
+				close(waitc)
+				break
+			}
+			if err != nil {
+				panic(err)
+			}
+			result := resp.GetMax()
+			fmt.Printf("max is... : %v\n", result)
+		}
+	}()
+
+	<-waitc
 }
 
 func doStreamingClient(c sumpb.CalculateServiceClient) {

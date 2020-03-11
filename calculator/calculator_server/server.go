@@ -57,6 +57,30 @@ func (s *server) ComputeAverage(stream sumpb.CalculateService_ComputeAverageServ
 	}
 }
 
+func (s *server) FindMaximum(stream sumpb.CalculateService_FindMaximumServer) error {
+	number := 0
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			panic(err)
+		}
+		num := int(req.GetNum())
+		if number < num {
+			number = num
+		}
+		err = stream.Send(&sumpb.FindMaximumResponse{
+			Max: int32(number),
+		})
+		if err != nil {
+			panic(err)
+		}
+	}
+	return nil
+}
+
 func main() {
 	lis, err := net.Listen("tcp", "0.0.0.0:50051")
 	if err != nil {
