@@ -5,7 +5,10 @@ import (
 	"fmt"
 	sumpb "github.com/IkezawaYuki/protobuf-lesson-go/calculator/calculatorpb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"io"
+	"log"
 	"time"
 )
 
@@ -20,7 +23,35 @@ func main() {
 	//doUnary(c)
 	//doStream(c)
 	//doStreamingClient(c)
-	doBiDiStreamClient(c)
+	//doBiDiStreamClient(c)
+	doErrorUnary(c)
+}
+
+func doErrorUnary(c sumpb.CalculateServiceClient) {
+	doErrorCall(c, 10)
+	doErrorCall(c, -5)
+
+}
+
+func doErrorCall(c sumpb.CalculateServiceClient, number int32) {
+	fmt.Println("Starting to do a SquareRoot Unary RPC...")
+	res, err := c.SquareRoot(context.Background(), &sumpb.SquareRootRequest{
+		Number: number,
+	})
+
+	if err != nil {
+		respErr, ok := status.FromError(err)
+		if ok {
+			fmt.Println(respErr.Message())
+			fmt.Println(respErr.Code())
+			if respErr.Code() == codes.InvalidArgument {
+				fmt.Println("We probably sent a negative number!")
+			}
+		} else {
+			log.Fatalf("Big Error calling SquareRoot: %v", err)
+		}
+	}
+	fmt.Printf("Request of square root of %v: %v", number, res.GetNumberRoot())
 }
 
 func doBiDiStreamClient(c sumpb.CalculateServiceClient) {

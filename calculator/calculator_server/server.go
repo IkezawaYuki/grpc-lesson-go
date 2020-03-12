@@ -2,9 +2,13 @@ package main
 
 import (
 	"context"
+	"fmt"
 	sumpb "github.com/IkezawaYuki/protobuf-lesson-go/calculator/calculatorpb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"io"
+	"math"
 	"net"
 	"time"
 )
@@ -79,6 +83,19 @@ func (s *server) FindMaximum(stream sumpb.CalculateService_FindMaximumServer) er
 		}
 	}
 	return nil
+}
+
+func (s *server) SquareRoot(ctx context.Context, req *sumpb.SquareRootRequest) (*sumpb.SquareRootResponse, error) {
+	number := req.GetNumber()
+	if number < 0 {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			fmt.Sprintf("Received a negative number: %v", number),
+		)
+	}
+	return &sumpb.SquareRootResponse{
+		NumberRoot: math.Sqrt(float64(number)),
+	}, nil
 }
 
 func main() {
