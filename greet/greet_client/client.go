@@ -178,14 +178,14 @@ func doUnary(c greetpb.GreetServiceClient) {
 	log.Printf("response from Greet: %v", res)
 }
 
-func doUnaryWithDeadline(c greetpb.GreetServiceClient, seconds time.Duration) {
+func doUnaryWithDeadline(c greetpb.GreetServiceClient, timeout time.Duration) {
 	req := &greetpb.GreetWithDeadlineRequest{
 		Greeting: &greetpb.Greeting{
 			FirstName: "yuki",
 			LastName:  "ikeawa",
 		},
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), seconds*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	res, err := c.GreetWithDeadline(ctx, req)
 	if err != nil {
@@ -197,7 +197,7 @@ func doUnaryWithDeadline(c greetpb.GreetServiceClient, seconds time.Duration) {
 				log.Fatalf("unexpected error :%v", statusErr)
 			}
 		}
-		log.Fatalf("error while calling Greet RPC: %v", err)
+		return
 	}
 	log.Printf("response from Greet: %v", res)
 }
