@@ -6,6 +6,7 @@ import (
 	"github.com/IkezawaYuki/protobuf-lesson-go/greet/greetpb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 	"io"
 	"log"
@@ -101,11 +102,26 @@ func (s *server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) 
 }
 
 func main() {
+	fmt.Println("Hello World")
 	lis, err := net.Listen("tcp", "0.0.0.0:50051")
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to listend to: %v", err)
 	}
-	s := grpc.NewServer()
+
+	var opts []grpc.ServerOption
+	tls := true
+
+	if tls {
+		certFile := "ssl/server.crt"
+		keyFile := "ssl/server.pem"
+		creds, sslErr := credentials.NewServerTLSFromFile(certFile, keyFile)
+		if sslErr != nil {
+			log.Fatalf("Failed loading certificates: %v", sslErr)
+		}
+		opts = append(opts, grpc.Creds(creds))
+	}
+
+	s := grpc.NewServer(opts...)
 	greetpb.RegisterGreetServiceServer(s, &server{})
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve : %v", err)
