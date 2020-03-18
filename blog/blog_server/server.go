@@ -91,7 +91,31 @@ func (s *server) CreateBlog(ctx context.Context, req *blogpb.CreateBlogRequest) 
 func (s *server) DeleteBlog(ctx context.Context, req *blogpb.DeleteBlogRequest) (*blogpb.DeleteBlogResponse, error) {
 	fmt.Println("Delete blgo request")
 	oid, err := primitive.ObjectIDFromHex(req.GetBlogId())
-	// todo
+	if err != nil {
+		status.Errorf(
+			codes.InvalidArgument,
+			fmt.Sprintf("Cannot parse ID"),
+		)
+	}
+
+	filter := bson.M{"_id": oid}
+	res, err := collection.DeleteOne(context.Background(), filter)
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			fmt.Sprintf("cannot delete object in mongodb: %v", err),
+		)
+	}
+	if res.DeletedCount == 0 {
+		return nil, status.Errorf(
+			codes.NotFound,
+			fmt.Sprintf("cannot found blog in mongodb: %v", err),
+		)
+	}
+
+	return &blogpb.DeleteBlogResponse{
+		BlogId: req.GetBlogId(),
+	}, nil
 }
 
 func (s *server) UpdateBlog(ctx context.Context, req *blogpb.UpdateBlogRequest) (*blogpb.UpdateBlogResponse, error) {
@@ -130,6 +154,12 @@ func (s *server) UpdateBlog(ctx context.Context, req *blogpb.UpdateBlogRequest) 
 	return &blogpb.UpdateBlogResponse{
 		Blog: dataToBlogPb(data),
 	}, nil
+}
+
+func (s *server) ListBlog(req *blogpb.ListBlogRequest, stream blogpb.BlogService_ListBlogServer) error {
+	fmt.Println("list blog request")
+
+	return nil
 }
 
 func dataToBlogPb(data *blogItem) *blogpb.Blog {
