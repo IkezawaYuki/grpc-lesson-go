@@ -6,6 +6,7 @@ import (
 	"github.com/IkezawaYuki/protobuf-lesson-go/blog/blogpb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"io"
 	"log"
 )
 
@@ -83,4 +84,19 @@ func main() {
 	}
 	fmt.Printf("blog was deleted: %v\n", deleteRes)
 
+	// list blog
+	stream, err := c.ListBlog(context.Background(), &blogpb.ListBlogRequest{})
+	if err != nil {
+		log.Fatalf("error while calling ListBlog RPC: %v", err)
+	}
+	for {
+		res, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("somthing happened: %v", err)
+		}
+		fmt.Println(res.GetBlog())
+	}
 }

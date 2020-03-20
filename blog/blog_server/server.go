@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/IkezawaYuki/protobuf-lesson-go/blog/blogpb"
+	"google.golang.org/grpc/reflection"
 	"gopkg.in/mgo.v2/bson"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -158,28 +159,34 @@ func (s *server) UpdateBlog(ctx context.Context, req *blogpb.UpdateBlogRequest) 
 
 func (s *server) ListBlog(req *blogpb.ListBlogRequest, stream blogpb.BlogService_ListBlogServer) error {
 	fmt.Println("list blog request")
-	cur, err := collection.Find(context.Background(), nil)
+	cur, err := collection.Find(context.Background(), primitive.D{{}})
 	if err != nil {
 		return status.Errorf(
 			codes.Internal,
 			fmt.Sprintf("unknown internal error: %v", err),
 		)
 	}
+	fmt.Println("169")
 	defer cur.Close(context.Background())
 	for cur.Next(context.Background()) {
 		data := &blogItem{}
-		cur.Decode(data)
+		err := cur.Decode(data)
 		if err != nil {
 			return status.Errorf(
 				codes.Internal,
-				fmt.Sprintf("error while decoding from mongodb: %v", err))
+				fmt.Sprintf("error while decoding from mongodb: %v", err),
+			)
 		}
 		stream.Send(&blogpb.ListBlogResponse{
 			Blog: dataToBlogPb(data),
 		})
 	}
+	fmt.Println("184")
 	if err := cur.Err(); err != nil {
-
+		return status.Errorf(
+			codes.Internal,
+			fmt.Sprintf("unknown internal error: %v", err),
+		)
 	}
 	return nil
 }
@@ -236,6 +243,7 @@ func main() {
 
 	s := grpc.NewServer(opts...)
 	blogpb.RegisterBlogServiceServer(s, &server{})
+	reflection.Register(s)
 
 	go func() {
 		fmt.Println("starting server...")
