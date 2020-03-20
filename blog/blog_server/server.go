@@ -256,11 +256,16 @@ func main() {
 	signal.Notify(ch, os.Interrupt)
 
 	<-ch
+	fmt.Println("closing mongodb connection")
+	if err := client.Disconnect(context.Background()); err != nil {
+		log.Fatalf("error dis connecton wiht mongodb: %v", err)
+	}
+	fmt.Println("stopping the listener")
+	if err := lis.Close(); err != nil {
+		log.Fatalf("error on closing the listener: %v", err)
+	}
+
 	fmt.Println("stopping the server")
 	s.Stop()
-	fmt.Println("stopping the listener")
-	lis.Close()
-	fmt.Println("closing mongodb connection")
-	client.Disconnect(context.Background())
 	fmt.Println("end of program")
 }
